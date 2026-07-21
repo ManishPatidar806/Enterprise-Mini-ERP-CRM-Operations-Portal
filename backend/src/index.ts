@@ -16,6 +16,9 @@ import { sendSuccess } from './utils/apiResponse';
 
 const app = express();
 
+// Trust proxy for reverse proxies (Render / Cloudflare) to support express-rate-limit
+app.set('trust proxy', 1);
+
 // Security Middlewares
 app.use(helmet());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));

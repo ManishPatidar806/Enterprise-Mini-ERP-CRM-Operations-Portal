@@ -12,7 +12,7 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run render:build
+RUN npm run render:start
 
 FROM node:20-bookworm-slim AS runner
 
@@ -31,4 +31,4 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 5000
 
-CMD ["node", "dist/index.js"]
+CMD ["npm", "run", "render:start"]
