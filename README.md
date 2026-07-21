@@ -147,7 +147,7 @@ stateDiagram-v2
 
 ### Base URL
 - Local: `http://localhost:5000/api`
-- Production: `https://<your-railway-app>.up.railway.app/api`
+- Production: `https://minierp-backend.onrender.com/api`
 - Interactive Swagger OpenAPI Docs: `http://localhost:5000/api-docs`
 
 ### 1. Authentication Endpoints
@@ -305,9 +305,8 @@ npm test
 4. Environment Variable:
    - `VITE_API_BASE_URL`: `https://minierp-backend.onrender.com/api` (or your Render service domain)
 
-### 3. Alternative Deployments (Railway / Docker / VPS)
-- **Railway**: Connect repo with Root Directory `backend`. Railway auto-detects `backend/railway.json`.
-- **Docker**: Run `docker-compose up -d --build` for full self-hosted local/VPS stack.
+### 3. Self-Hosted Docker Deployment
+- **Docker Compose**: Run `docker-compose up -d --build` for full self-hosted local or VPS stack.
 
 
 

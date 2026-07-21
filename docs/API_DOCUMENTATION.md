@@ -2,7 +2,7 @@
 
 ## Base URL
 - Development: `http://localhost:5000/api`
-- Production: `https://<your-railway-app>.up.railway.app/api`
+- Production: `https://minierp-backend.onrender.com/api`
 
 ---
 

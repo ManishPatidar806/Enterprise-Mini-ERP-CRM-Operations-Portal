@@ -77,17 +77,7 @@ Render Blueprints automatically provision the **PostgreSQL Database**, **Backend
 
 ---
 
-## 🚂 Option 4: Railway Deployment (Alternative)
-
-1. Log in to [Railway.app](https://railway.app).
-2. Click **+ New** ➔ **Database** ➔ **Add PostgreSQL**.
-3. Click **+ New** ➔ **GitHub Repo** ➔ Select repository, set Root Directory to `backend`.
-4. Railway auto-detects `backend/railway.json`.
-5. Set environment variables (`DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGIN`).
-
----
-
-## 🐳 Option 5: Self-Hosted Docker Compose
+## 🐳 Option 4: Self-Hosted Docker Compose
 
 To run the full stack locally or on a VPS using Docker:
 
@@ -99,3 +89,4 @@ Access services:
 - **Frontend App**: `http://localhost`
 - **Backend API**: `http://localhost:5000/api`
 - **Swagger Docs**: `http://localhost:5000/api-docs`
+
