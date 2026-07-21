@@ -1,3 +1,4 @@
+# Production Dockerfile for Backend
 FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
@@ -13,8 +14,7 @@ COPY . .
 
 RUN npm run render:build
 
-
-FROM node:20-bookworm-slim
+FROM node:20-bookworm-slim AS runner
 
 WORKDIR /app
 
