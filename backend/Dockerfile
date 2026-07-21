@@ -1,7 +1,8 @@
-# Production Dockerfile for Backend
-FROM node:20-alpine AS builder
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y openssl
 
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -10,19 +11,21 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run prisma:generate
-RUN npm run build
+RUN npm run render:build
 
-FROM node:20-alpine AS runner
+
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-ENV NODE_ENV=production
+RUN apt-get update && apt-get install -y openssl
 
 COPY package*.json ./
 COPY prisma ./prisma/
 
-RUN npm ci --only=production
+RUN npm ci --omit=dev
+
+RUN npx prisma generate --schema=prisma/schema.postgres.prisma
 
 COPY --from=builder /app/dist ./dist
 
