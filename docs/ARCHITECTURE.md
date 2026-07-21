@@ -1,40 +1,46 @@
-# Enterprise Mini ERP + CRM Portal — System Architecture Documentation
+# System Architecture
 
-## 1. System Overview
+This document explains how the Enterprise Mini ERP + CRM Portal is designed, how data flows through the application, and how key features work behind the scenes.
 
-The **Enterprise Mini ERP + CRM Operations Portal** is designed using **Clean Architecture** principles to support wholesale and distribution enterprise operations. The system cleanly separates business domain logic from data access and transport protocols, ensuring high maintainability, testability, and scalability.
+---
+
+## 1. System High-Level View
+
+The application uses a standard decoupled architecture with a React frontend communicating with an Express REST API backed by a PostgreSQL database.
 
 ```mermaid
 graph TD
-    Client[React + TypeScript Frontend] -->|HTTPS REST APIs| API[Express API Server]
-    API -->|JWT Authentication| AuthMiddleware[Auth & RBAC Middleware]
-    AuthMiddleware -->|Validated Request| Controllers[Controllers Layer]
-    Controllers -->|Zod Validation| ValidationLayer[Validation Layer]
+    Client[React + Vite Frontend] -->|HTTPS REST APIs| API[Express API Server]
+    API -->|JWT Check| AuthMiddleware[Auth & RBAC Middleware]
+    AuthMiddleware -->|Validate Request| Controllers[Controllers Layer]
+    Controllers -->|Validate Body| ValidationLayer[Zod Validation]
     Controllers -->|Business Logic| Services[Service Layer]
-    Services -->|ORM Abstraction| Prisma[Prisma ORM Client]
+    Services -->|Database Queries| Prisma[Prisma ORM Client]
     Prisma -->|SQL Driver| Database[(PostgreSQL Database)]
 ```
 
 ---
 
-## 2. Directory & Layer Organization
+## 2. Codebase Organization
 
-### Backend Layering (Clean Architecture / N-Tier)
+The backend follows a layered structure to keep code clean and easy to test:
+
 ```
 backend/src/
-├── config/             # Application environment configurations
-├── controllers/        # Request handling, HTTP response formatting
-├── services/           # Core domain business logic & state transitions
-├── validations/        # Zod input request schema validations
-├── middlewares/        # Security, Auth JWT, Role RBAC & Error handling
-├── routes/             # Express API Endpoint definitions
-├── utils/              # Standardized API response helpers, JWT, Logger, Prisma
-└── types/              # Express & TypeScript declarations
+├── config/             # Environment variables and port settings
+├── controllers/        # Parses HTTP requests and sends back responses
+├── services/           # Core business logic (stock deduction rules, CRM rules)
+├── validations/        # Request body validation schemas using Zod
+├── middlewares/        # Authentication, role permissions, rate limiting, error handling
+├── routes/             # URL route definitions
+└── utils/              # Helper functions (JWT tokens, logger, standard API responses)
 ```
 
 ---
 
-## 3. Entity Relationship (ER) Diagram
+## 3. Database Entity Relationships
+
+Here is how the main database tables connect with each other:
 
 ```mermaid
 erDiagram
@@ -58,47 +64,47 @@ erDiagram
 
 ---
 
-## 4. Authentication & Authorization Flow
+## 4. How Security & Roles Work
 
-1. **Authentication**: Users log in with email and password via `POST /api/auth/login`. On verification, the server issues:
-   - **Access Token**: Short-lived JWT (15 mins) carried in `Authorization: Bearer <token>` header.
-   - **Refresh Token**: Long-lived token (7 days) stored in database and used via `POST /api/auth/refresh`.
+### Authentication
+1. A user logs in with their email and password.
+2. The server returns two tokens:
+   - **Access Token**: Short-lived JWT (valid for 15 minutes) sent in the HTTP header for requests.
+   - **Refresh Token**: Long-lived token (valid for 7 days) stored securely to generate new access tokens seamlessly when the old one expires.
 
-2. **Role-Based Access Control (RBAC)**:
-   - `ADMIN`: Global read/write, user registration, deletion, full audit logs.
-   - `SALES`: Customer CRM management, follow-ups, Sales Challan generation.
-   - `WAREHOUSE`: Product catalog, min stock levels, manual stock adjustments.
-   - `ACCOUNTS`: Financial reports, Sales Challans audit, read-only customer records.
+### User Roles
+- **ADMIN**: Access to all features, including system configuration, audit logs, and record deletion.
+- **SALES**: Can manage customer details, log sales follow-ups, and generate sales challans.
+- **WAREHOUSE**: Can edit product details and adjust warehouse stock levels (`IN` / `OUT`).
+- **ACCOUNTS**: Can view financial summaries, print invoices, and review security audit logs.
 
 ---
 
-## 5. Key Business Workflows
+## 5. Sales Challan & Stock Logic Flow
 
-### Sales Challan Lifecycle & Stock Deduction Logic
+When a user works with a Sales Challan, stock levels update according to these rules:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> DRAFT : User creates Challan
-    DRAFT --> CONFIRMED : Sales/Warehouse confirms Challan
-    CONFIRMED --> CANCELLED : Admin/Sales cancels Challan
-    DRAFT --> CANCELLED : User cancels Draft
+    [*] --> DRAFT : Create Challan
+    DRAFT --> CONFIRMED : Confirm Order
+    CONFIRMED --> CANCELLED : Cancel Order
+    DRAFT --> CANCELLED : Cancel Draft
 
     state CONFIRMED {
-        [*] --> ReduceStock : Check availability & deduct stock
-        ReduceStock --> RecordMovement : Log OUT Stock Movement
+        [*] --> CheckStock : Verify sufficient quantity
+        CheckStock --> DeductStock : Deduct stock from warehouse
+        DeductStock --> LogMovement : Log OUT movement in audit history
     }
 
     state CANCELLED {
-        [*] --> RestoreStock : If previously CONFIRMED, restore stock
-        RestoreStock --> RecordInMovement : Log IN Stock Movement
+        [*] --> RestoreStock : If was CONFIRMED, add stock back
+        RestoreStock --> LogInMovement : Log IN movement in audit history
     }
 ```
 
----
-
-## 6. Scalability & Caching Strategy
-
-- **Stateless API Layer**: API endpoints are stateless, enabling horizontal scaling using load balancers (AWS ALB, Nginx).
-- **Database Connection Pooling**: Prisma manages PostgreSQL connection pooling efficiently.
-- **Client-Side Query Caching**: React Query (TanStack Query) handles caching and background revalidation on the client.
-- **Redis Cache Ready**: Redis layer can be added to cache high-frequency product lookup APIs (`GET /api/products`).
+1. **Creating a Draft**: A sales challan starts as `DRAFT`. In draft mode, product items are selected but warehouse stock is **not deducted**.
+2. **Confirming a Challan**: When confirmed, the system checks whether enough stock exists for every line item.
+   - If stock is available, it deducts the stock and logs an `OUT` stock movement.
+   - If stock is missing, it cancels the transaction and returns a helpful error.
+3. **Price & Customer Snapshots**: When a challan is created, the system saves a snapshot of product prices and customer details inside the challan. This ensures older invoices remain accurate even if prices or address details change in the future.

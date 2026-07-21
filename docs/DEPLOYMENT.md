@@ -1,92 +1,78 @@
-# Enterprise Mini ERP + CRM Deployment Guide
+# Cloud Deployment Guide
 
-This document provides step-by-step instructions to deploy the application on production cloud services:
-- **Database**: Render PostgreSQL (Managed Database)
-- **Backend API**: Render (Node.js Web Service)
-- **Frontend App**: Render / Vercel (Static Web Application)
+This guide explains how to deploy the Enterprise Mini ERP + CRM Portal to production on **Render** (or using Docker).
 
 ---
 
-## 🚀 Option 1: 1-Click Render Blueprint Deployment (Recommended)
+## 🚀 Option 1: 1-Click Render Blueprint (Recommended)
 
-Render Blueprints automatically provision the **PostgreSQL Database**, **Backend Web Service**, and **Frontend Static Site** in a single step using `render.yaml`.
+Render Blueprints let you set up the database, backend API, and frontend website automatically in one step using the included `render.yaml` file.
 
 1. Push your repository to GitHub.
-2. Go to [Render Dashboard](https://dashboard.render.com/) and click **New** ➔ **Blueprint**.
-3. Connect your GitHub repository.
-4. Render will auto-detect `render.yaml` and prompt you to create the resources:
-   - **minierp-postgres** (PostgreSQL Managed Database)
-   - **minierp-backend** (Web Service)
-   - **minierp-frontend** (Static Site)
-5. Click **Apply**. Render will deploy all services automatically!
+2. Sign in to your [Render Dashboard](https://dashboard.render.com/).
+3. Click **New +** ➔ **Blueprint**.
+4. Connect your GitHub repository.
+5. Render will detect `render.yaml` and create three services:
+   - **minierp-postgres** (Managed PostgreSQL Database)
+   - **minierp-backend** (Express Node Web Service)
+   - **minierp-frontend** (React Static Site)
+6. Click **Apply** to complete deployment.
 
 ---
 
-## 🛠️ Option 2: Manual Render Setup
+## 🛠️ Option 2: Manual Setup on Render
 
-### Step 1: Create Render PostgreSQL Database
-1. Go to [Render Dashboard](https://dashboard.render.com/) ➔ Click **New +** ➔ **PostgreSQL**.
-2. Set Name: `minierp-postgres`, Database: `minierp`, User: `minierp_user`.
-3. Select Plan (Free / Starter).
+If you prefer to configure each service manually on Render:
+
+### Step 1: Create the PostgreSQL Database
+1. Go to your [Render Dashboard](https://dashboard.render.com/) and click **New +** ➔ **PostgreSQL**.
+2. Name the database `minierp-postgres`.
+3. Choose the Free or Starter plan.
 4. Click **Create Database**.
-5. Once created, copy the **Internal Database URL** (or External Database URL).
+5. Once ready, copy the **Internal Database URL**.
 
-### Step 2: Deploy Backend Service on Render
+### Step 2: Deploy the Backend API
 1. Click **New +** ➔ **Web Service** on Render.
 2. Select your GitHub repository.
-3. Configure settings:
+3. Use the following settings:
    - **Name**: `minierp-backend`
    - **Root Directory**: `backend`
    - **Environment**: `Node`
    - **Build Command**: `npm install && npm run render:build`
    - **Start Command**: `npm run render:start`
-4. Add **Environment Variables**:
+4. Add these Environment Variables:
    - `NODE_ENV`: `production`
    - `PORT`: `10000`
-   - `DATABASE_URL`: `<Paste Render PostgreSQL Database URL>`
-   - `JWT_ACCESS_SECRET`: `<Generate a secure random string>`
-   - `JWT_REFRESH_SECRET`: `<Generate a secure random string>`
-   - `CORS_ORIGIN`: `*` (or your frontend domain URL)
+   - `DATABASE_URL`: `<Paste Internal Database URL from Step 1>`
+   - `JWT_ACCESS_SECRET`: `<Enter a secret key>`
+   - `JWT_REFRESH_SECRET`: `<Enter a secret key>`
+   - `CORS_ORIGIN`: `*`
 5. Click **Create Web Service**.
 
----
-
-## 🌐 Option 3: Frontend Deployment (Render / Vercel)
-
-### Option A: Render Static Site
-1. Click **New +** ➔ **Static Site**.
+### Step 3: Deploy the Frontend Website
+1. Click **New +** ➔ **Static Site** on Render.
 2. Select your GitHub repository.
-3. Settings:
+3. Use the following settings:
+   - **Name**: `minierp-frontend`
    - **Root Directory**: `frontend`
    - **Build Command**: `npm install && npm run build`
    - **Publish Directory**: `dist`
-4. Add **Environment Variable**:
-   - `VITE_API_BASE_URL`: `https://minierp-backend.onrender.com/api` (Replace with your backend URL)
-5. Add **Rewrite Rule** under Settings:
-   - Source: `/*` ➔ Destination: `/index.html` (for SPA routing)
-
-### Option B: Vercel
-1. Sign up at [vercel.com](https://vercel.com) and import your GitHub repository.
-2. Select `frontend` as Root Directory.
-3. Build settings:
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-4. Environment Variable:
-   - `VITE_API_BASE_URL`: `https://minierp-backend.onrender.com/api`
-5. Click **Deploy**.
+4. Add an Environment Variable:
+   - `VITE_API_BASE_URL`: `https://minierp-backend.onrender.com/api` *(Use your backend URL)*
+5. Add a Rewrite Rule under Settings:
+   - Source: `/*` ➔ Destination: `/index.html` (Required for React page routing)
 
 ---
 
-## 🐳 Option 4: Self-Hosted Docker Compose
+## 🐳 Option 3: Self-Hosted Docker Deployment
 
-To run the full stack locally or on a VPS using Docker:
+To run the whole system on your own VPS or local machine using Docker:
 
 ```bash
 docker-compose up -d --build
 ```
 
-Access services:
+Your services will be available at:
 - **Frontend App**: `http://localhost`
 - **Backend API**: `http://localhost:5000/api`
-- **Swagger Docs**: `http://localhost:5000/api-docs`
-
+- **Swagger Documentation**: `http://localhost:5000/api-docs`

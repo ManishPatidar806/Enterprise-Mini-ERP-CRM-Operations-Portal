@@ -1,15 +1,38 @@
-# Enterprise Mini ERP + CRM API Specification
+# API Documentation
 
-## Base URL
-- Development: `http://localhost:5000/api`
-- Production: `https://minierp-backend.onrender.com/api`
+This guide describes the HTTP API endpoints available in the Enterprise Mini ERP + CRM Portal.
+
+## Base URLs
+- **Local Development**: `http://localhost:5000/api`
+- **Production (Render)**: `https://minierp-backend.onrender.com/api`
+- **Swagger Interactive Docs**: `http://localhost:5000/api-docs`
+
+---
+
+## Authentication & Headers
+
+Except for login and token refresh endpoints, all requests require an HTTP Authorization header containing a JWT access token:
+
+```http
+Authorization: Bearer <your_access_token>
+```
+
+Standard JSON response layout:
+```json
+{
+  "success": true,
+  "message": "Operation completed successfully",
+  "data": { ... }
+}
+```
 
 ---
 
 ## 1. Authentication Endpoints
 
-### `POST /api/auth/login`
-Authenticates user and returns access/refresh tokens.
+### Login
+- **Endpoint**: `POST /api/auth/login`
+- **Auth Required**: No
 - **Request Body**:
   ```json
   {
@@ -17,41 +40,55 @@ Authenticates user and returns access/refresh tokens.
     "password": "Admin123!"
   }
   ```
-- **Response (200 OK)**:
+- **Response**:
   ```json
   {
     "success": true,
     "message": "Login successful",
     "data": {
       "user": {
-        "id": "uuid",
+        "id": "c1f7a08b-...",
         "email": "admin@minierp.com",
         "fullName": "Vikram Malhotra (Admin)",
         "role": "ADMIN"
       },
-      "accessToken": "eyJhbGci...",
-      "refreshToken": "eyJhbGci..."
+      "accessToken": "eyJhbG...",
+      "refreshToken": "eyJhbG..."
     }
   }
   ```
 
-### `POST /api/auth/refresh`
-Issues new access token using valid refresh token.
-- **Request Body**: `{ "refreshToken": "<refresh_token>" }`
+### Refresh Token
+- **Endpoint**: `POST /api/auth/refresh`
+- **Auth Required**: No
+- **Request Body**:
+  ```json
+  {
+    "refreshToken": "<your_refresh_token>"
+  }
+  ```
+- **Response**: Returns a fresh `accessToken`.
 
-### `POST /api/auth/logout`
-Revokes refresh token.
+### Logout
+- **Endpoint**: `POST /api/auth/logout`
+- **Auth Required**: No
+- **Request Body**: `{ "refreshToken": "<your_refresh_token>" }`
 
 ---
 
 ## 2. Customer CRM Endpoints
 
-### `GET /api/customers`
-- **Query Params**: `page`, `limit`, `search`, `customerType`, `status`, `sortBy`, `sortOrder`
-- **Response**: List of customers with pagination metadata.
+### List Customers
+- **Endpoint**: `GET /api/customers`
+- **Query Parameters**:
+  - `page` (default: 1)
+  - `limit` (default: 10)
+  - `search` (matches customer name, business name, GST number, or email)
+  - `customerType` (`WHOLESALE` or `RETAIL`)
 
-### `POST /api/customers`
-- **Required Roles**: `ADMIN`, `SALES`
+### Create Customer
+- **Endpoint**: `POST /api/customers`
+- **Roles Allowed**: `ADMIN`, `SALES`
 - **Request Body**:
   ```json
   {
@@ -61,52 +98,102 @@ Revokes refresh token.
     "mobile": "+91 9820012345",
     "gstNumber": "27AAACA1234A1Z5",
     "customerType": "WHOLESALE",
-    "address": "Industrial Hub, Mumbai"
+    "address": "Industrial Estate, Mumbai"
   }
   ```
 
-### `POST /api/customers/:id/followups`
-Adds a CRM follow-up interaction note.
-
----
-
-## 3. Product & Inventory Endpoints
-
-### `GET /api/products`
-- **Query Params**: `search`, `lowStock=true`
-
-### `POST /api/inventory/adjust`
-- **Required Roles**: `ADMIN`, `WAREHOUSE`
+### Add Follow-Up Note
+- **Endpoint**: `POST /api/customers/:id/followups`
+- **Roles Allowed**: `ADMIN`, `SALES`
 - **Request Body**:
   ```json
   {
-    "productId": "uuid",
-    "warehouseId": "uuid",
+    "notes": "Discussed bulk order discount for Q3.",
+    "nextFollowupDate": "2026-08-01T10:00:00.000Z"
+  }
+  ```
+
+---
+
+## 3. Products & Stock Endpoints
+
+### List Products
+- **Endpoint**: `GET /api/products`
+- **Query Parameters**:
+  - `search` (matches product name or SKU)
+  - `lowStock` (`true` to filter products below minimum stock)
+
+### Create Product
+- **Endpoint**: `POST /api/products`
+- **Roles Allowed**: `ADMIN`, `WAREHOUSE`
+- **Request Body**:
+  ```json
+  {
+    "name": "Industrial Router X500",
+    "sku": "SKU-ROUT-500",
+    "unitPrice": 4500.00,
+    "minStock": 10,
+    "unit": "PCS"
+  }
+  ```
+
+### Manual Stock Adjustment
+- **Endpoint**: `POST /api/inventory/adjust`
+- **Roles Allowed**: `ADMIN`, `WAREHOUSE`
+- **Request Body**:
+  ```json
+  {
+    "productId": "<product_uuid>",
     "quantity": 25,
     "movementType": "IN",
-    "reason": "Procurement shipment received"
+    "reason": "New inventory stock arrival"
   }
   ```
+  *(Set `movementType` to `"IN"` to add stock or `"OUT"` to deduct stock).*
 
 ---
 
-## 4. Sales Challans Endpoints
+## 4. Sales Challan Endpoints
 
-### `POST /api/challans`
+### Create Sales Challan (Draft)
+- **Endpoint**: `POST /api/challans`
+- **Roles Allowed**: `ADMIN`, `SALES`
 - **Request Body**:
   ```json
   {
-    "customerId": "uuid",
+    "customerId": "<customer_uuid>",
     "items": [
       {
-        "productId": "uuid",
+        "productId": "<product_uuid>",
         "quantity": 5,
-        "unitPrice": 3450.00
+        "unitPrice": 4500.00
       }
     ],
-    "notes": "Urgent warehouse dispatch"
+    "notes": "Standard 30-day payment terms"
   }
   ```
 
-### `PATCH /api/challans/:id/status`
-- **Request Body**: `{ "status": "CONFIRMED" }` (Status options: `DRAFT`, `CONFIRMED`, `CANCELLED`)
+### Update Challan Status (Confirm / Cancel)
+- **Endpoint**: `PATCH /api/challans/:id/status`
+- **Roles Allowed**: `ADMIN`, `SALES`, `WAREHOUSE`
+- **Request Body**:
+  ```json
+  {
+    "status": "CONFIRMED"
+  }
+  ```
+  *When confirmed, the system verifies available stock and deducts items automatically. If stock is insufficient, the request returns an HTTP 400 error.*
+
+---
+
+## 5. Audit & Dashboard Endpoints
+
+### Dashboard Summary
+- **Endpoint**: `GET /api/dashboard/summary`
+- **Roles Allowed**: All logged-in users
+- **Response**: Total revenue, total customers, low stock count, pending challans, and monthly sales chart data.
+
+### Audit Logs
+- **Endpoint**: `GET /api/audit-logs`
+- **Roles Allowed**: `ADMIN`, `ACCOUNTS`
+- **Response**: List of user actions (created customer, updated stock, confirmed challan) with timestamps and IP addresses.

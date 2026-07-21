@@ -1,32 +1,40 @@
-# Manual Testing & QA Verification Checklist
+# QA & Testing Checklist
 
-Use this checklist to perform complete QA validation on the application.
+Use this simple checklist to verify that all parts of the application are working properly.
 
-## 1. Authentication & Role Authorization
+---
 
-- [x] **Admin Login**: Test `admin@minierp.com` / `Admin123!`. Access full system.
-- [x] **Sales Login**: Test `sales@minierp.com` / `Sales123!`. Access CRM & Challans.
-- [x] **Warehouse Lead**: Test `warehouse@minierp.com` / `Warehouse123!`. Access Stock Adjustments.
-- [x] **Accounts Manager**: Test `accounts@minierp.com` / `Accounts123!`. Access Audit Logs & Financials.
-- [x] **Unauthenticated Access**: Direct route navigation to `/dashboard` redirects to `/login`.
-- [x] **Token Refresh**: Automatic seamless token refresh when access token expires.
+## 1. Login & User Permissions
+
+- [x] **Admin Account**: Log in with `admin@minierp.com` / `Admin123!`. Confirm access to all pages, user management, and audit logs.
+- [x] **Sales Executive**: Log in with `sales@minierp.com` / `Sales123!`. Confirm access to Customers and Sales Challans.
+- [x] **Warehouse Lead**: Log in with `warehouse@minierp.com` / `Warehouse123!`. Confirm access to Products and Stock Adjustments.
+- [x] **Accounts Manager**: Log in with `accounts@minierp.com` / `Accounts123!`. Confirm access to Financial Summaries and Audit Logs.
+- [x] **Protected Routes**: Try opening `/dashboard` directly while logged out. Confirm it redirects to `/login`.
+- [x] **Token Refresh**: Stay logged in until the access token expires. Confirm the app refreshes the token without logging you out.
+
+---
 
 ## 2. Customer CRM Module
 
-- [x] **Customer Creation**: Fill form with duplicate GST/Email; verify validation prevents duplicates.
-- [x] **Search & Filter**: Search by business name, filter by Wholesale / Retail.
-- [x] **CRM Follow-up**: Add follow-up note and verify scheduled date updates on timeline.
-- [x] **Soft Delete**: Deleting a customer marks record as `isDeleted = true`.
+- [x] **Add Customer**: Fill out the customer form. Enter an existing GST number or Email and confirm duplicate validation works.
+- [x] **Search & Filter**: Search customers by business name. Filter by Wholesale vs Retail.
+- [x] **Follow-Up Notes**: Add a follow-up note to a customer and verify the scheduled date updates on the timeline.
+- [x] **Delete Customer**: Delete a customer record and verify it is hidden from active customer lists.
 
-## 3. Product & Inventory Module
+---
 
-- [x] **Low Stock Indicator**: Products with stock <= minStock highlight with red warning badge.
-- [x] **Stock Adjustment (IN)**: Add stock quantity; verify stock movement log records `IN`.
-- [x] **Stock Adjustment (OUT)**: Deduct stock; verify system blocks deduction if stock < requested.
+## 3. Products & Stock Module
 
-## 4. Sales Challan Workflow
+- [x] **Low Stock Warning**: Check if products with stock at or below the minimum stock level display a red warning badge.
+- [x] **Stock In**: Perform a manual stock adjustment to add items (`IN`) and verify stock count increases.
+- [x] **Stock Out Validation**: Try to deduct more stock than is available. Confirm the system blocks the request with a clear message.
 
-- [x] **Create Draft Challan**: Create Challan with multiple items; verify stock is NOT deducted in DRAFT status.
-- [x] **Confirm Challan**: Click Confirm; verify stock is deducted and OUT movement is logged.
-- [x] **Negative Stock Block**: Attempting to confirm a challan exceeding available stock throws clear error.
-- [x] **Printable Invoice**: Click Print/Export PDF; verify printable document formats properly.
+---
+
+## 4. Sales Challans & Invoices
+
+- [x] **Draft Challan**: Create a sales challan with multiple items. Verify stock levels do not change while in `DRAFT` status.
+- [x] **Confirm Order**: Confirm the challan. Verify stock is automatically deducted from inventory.
+- [x] **Out of Stock Block**: Try to confirm a challan when item quantity exceeds available stock. Confirm the system prevents confirmation.
+- [x] **Print Invoice**: Click Print/Export PDF on a confirmed challan. Verify the printable invoice loads with correct details.

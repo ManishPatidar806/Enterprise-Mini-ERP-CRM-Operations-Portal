@@ -1,197 +1,31 @@
-# Enterprise Mini ERP + CRM Operations Portal
+# Enterprise Mini ERP + CRM Portal
 
-A production-grade, full-stack Enterprise Mini ERP + CRM Portal built for wholesale and distribution operations.
+A web portal built for wholesale and distribution businesses to manage customers, track inventory, log follow-ups, and process sales challans.
 
-Built with **Node.js, TypeScript, Express.js, PostgreSQL (Prisma ORM), React, Vite, Tailwind CSS, TanStack Query, Zod, and Docker**.
+Built with **Node.js, Express, Prisma ORM, React, TypeScript, Vite, Tailwind CSS, and PostgreSQL**.
 
 ---
 
-## 🔑 Pre-Configured Test Role Credentials
+## 🔑 Demo Login Accounts
 
-For instant evaluation, the database seed includes pre-configured accounts for all 4 roles:
+You can test the app using these pre-configured accounts (or click the quick-login buttons on the login screen):
 
-| Role | Email | Password | Access Tier & Capabilities |
+| Role | Email | Password | What You Can Do |
 | :--- | :--- | :--- | :--- |
-| **Admin** | `admin@minierp.com` | `Admin123!` | Full System Access, Audit Logs, Customer/Product Deletion |
-| **Sales Exec** | `sales@minierp.com` | `Sales123!` | Customer CRM, Follow-up Notes, Draft/Confirmed Sales Challans |
-| **Warehouse Lead**| `warehouse@minierp.com` | `Warehouse123!` | Manual Stock Adjustments (`IN`/`OUT`), Product Catalog & SKU Master |
-| **Accounts** | `accounts@minierp.com` | `Accounts123!` | Financial Reports, Invoice Printing, Security & Audit Logs |
-
-*Tip: Quick 1-click Demo buttons are built into the Login screen for instant evaluation!*
+| **Admin** | `admin@minierp.com` | `Admin123!` | Access everything, view audit logs, delete records |
+| **Sales Exec** | `sales@minierp.com` | `Sales123!` | Manage customer CRM, add follow-ups, create sales challans |
+| **Warehouse Lead** | `warehouse@minierp.com` | `Warehouse123!` | Manage product list, adjust stock levels (`IN` / `OUT`) |
+| **Accounts Manager** | `accounts@minierp.com` | `Accounts123!` | View financial summaries, print invoices, inspect audit logs |
 
 ---
 
-## 🛠️ Technology Stack
+## 🚀 Quick Start (Run Locally in 2 Minutes)
 
-### Backend
-- **Node.js (LTS)** & **TypeScript**
-- **Express.js** with Clean Architecture (Controllers, Services, Middlewares)
-- **PostgreSQL** (Production) / **SQLite** (Dev) & **Prisma ORM**
-- **JWT** (jsonwebtoken) & **bcryptjs** (Access & Refresh Tokens)
-- **Zod Schema Validation**
-- **Helmet, CORS, Compression, Morgan & Rate Limiting**
-- **Jest & Supertest** integration test suite
+### Requirements
+- Node.js (v18 or higher)
+- npm (v9 or higher)
 
-### Frontend
-- **React 18** & **TypeScript**
-- **Vite** bundler
-- **TanStack Query (React Query v5)**
-- **Tailwind CSS** with Modern Professional Clean design system
-- **Recharts** analytics charts
-- **Lucide Icons**
-
----
-
-## 📐 System Architecture
-
-### 1. Overview & Layering
-
-The system is designed using **Clean Architecture** principles to support enterprise operations. It cleanly separates business domain logic from data access and transport protocols, ensuring high maintainability, testability, and scalability.
-
-```mermaid
-graph TD
-    Client[React + TypeScript Frontend] -->|HTTPS REST APIs| API[Express API Server]
-    API -->|JWT Authentication| AuthMiddleware[Auth & RBAC Middleware]
-    AuthMiddleware -->|Validated Request| Controllers[Controllers Layer]
-    Controllers -->|Zod Validation| ValidationLayer[Validation Layer]
-    Controllers -->|Business Logic| Services[Service Layer]
-    Services -->|ORM Abstraction| Prisma[Prisma ORM Client]
-    Prisma -->|SQL Driver| Database[(PostgreSQL Database)]
-```
-
-### Directory Structure
-```
-.
-├── backend/
-│   ├── prisma/
-│   │   ├── schema.prisma            # SQLite Dev Schema
-│   │   ├── schema.postgres.prisma   # Production PostgreSQL Schema
-│   │   └── seed.ts                  # Master DB Seed Script
-│   ├── src/
-│   │   ├── config/                  # Environment config
-│   │   ├── controllers/             # HTTP Controllers
-│   │   ├── middlewares/             # JWT Auth, Roles, RateLimit, ErrorHandler
-│   │   ├── routes/                  # Express REST Routes
-│   │   ├── services/                # Business Domain Services
-│   │   ├── utils/                   # Standardized Response, JWT, Logger
-│   │   ├── validations/             # Zod Input Schemas
-│   │   └── index.ts                 # Server Entrypoint
-│   ├── tests/                       # Jest Integration Test Suite
-│   ├── swagger.json                 # OpenAPI 3.0 Documentation
-│   └── postman_collection.json      # Postman Collection
-├── frontend/
-│   ├── src/
-│   │   ├── components/              # Layout, Navbar, Sidebar, Modals, StatCards
-│   │   ├── context/                 # AuthContext
-│   │   ├── pages/                   # Dashboard, Customers, Products, Inventory, Challans
-│   │   ├── lib/                     # Axios API client with token interceptor
-│   │   └── types/                   # TypeScript interfaces
-├── docker-compose.yml               # Multi-container Docker configuration
-└── README.md
-```
-
-### 2. Entity Relationship (ER) Diagram
-
-```mermaid
-erDiagram
-    User ||--o{ RefreshToken : issues
-    User ||--o{ AuditLog : performs
-    User ||--o{ SalesChallan : creates
-    User ||--o{ StockMovement : records
-    User ||--o{ CustomerFollowup : logs
-
-    Customer ||--o{ CustomerFollowup : receives
-    Customer ||--o{ SalesChallan : places
-
-    Warehouse ||--o{ Inventory : stores
-
-    Product ||--o{ Inventory : tracked_in
-    Product ||--o{ StockMovement : moves
-    Product ||--o{ SalesChallanItem : included_in
-
-    SalesChallan ||--|{ SalesChallanItem : contains
-```
-
-### 3. Authentication & Authorization Flow
-
-1. **Authentication**: Users log in via `POST /api/auth/login`. On verification, the server issues:
-   - **Access Token**: Short-lived JWT (15 mins) carried in `Authorization: Bearer <token>` header.
-   - **Refresh Token**: Long-lived token (7 days) stored in database and used via `POST /api/auth/refresh`.
-2. **Role-Based Access Control (RBAC)**: Enforced via `authorizeRoles(...)` Express middleware.
-
-### 4. Sales Challan Lifecycle & Stock Deduction Logic
-
-```mermaid
-stateDiagram-v2
-    [*] --> DRAFT : User creates Challan
-    DRAFT --> CONFIRMED : Sales/Warehouse confirms Challan
-    CONFIRMED --> CANCELLED : Admin/Sales cancels Challan
-    DRAFT --> CANCELLED : User cancels Draft
-
-    state CONFIRMED {
-        [*] --> ReduceStock : Check availability & deduct stock
-        ReduceStock --> RecordMovement : Log OUT Stock Movement
-    }
-
-    state CANCELLED {
-        [*] --> RestoreStock : If previously CONFIRMED, restore stock
-        RestoreStock --> RecordInMovement : Log IN Stock Movement
-    }
-```
-
-- **Snapshot Preservation**: Customer details and unit prices are snapshot-stored inside the sales challan database record as JSON objects. This preserves historical financial and invoice integrity even if customer/product master data is edited later.
-
----
-
-## 🔌 REST API Specification
-
-### Base URL
-- Local: `http://localhost:5000/api`
-- Production: `https://minierp-backend.onrender.com/api`
-- Interactive Swagger OpenAPI Docs: `http://localhost:5000/api-docs`
-
-### 1. Authentication Endpoints
-- `POST /api/auth/login`
-  - Body: `{ "email": "admin@minierp.com", "password": "Admin123!" }`
-  - Returns: `{ "user": { ... }, "accessToken": "...", "refreshToken": "..." }`
-- `POST /api/auth/refresh`
-  - Body: `{ "refreshToken": "<token>" }`
-- `POST /api/auth/logout`
-  - Body: `{ "refreshToken": "<token>" }`
-
-### 2. Customer CRM Endpoints
-- `GET /api/customers` — Query params: `page`, `limit`, `search`, `customerType`, `status`.
-- `POST /api/customers` — Roles: `ADMIN`, `SALES`. Body: `customerName`, `businessName`, `email`, `mobile`, `gstNumber`, `customerType`, `address`.
-- `GET /api/customers/:id` — Customer profile + CRM interaction history.
-- `PUT /api/customers/:id` — Update customer details.
-- `POST /api/customers/:id/followups` — Add CRM follow-up note (`notes`, `nextFollowupDate`).
-
-### 3. Product & Inventory Endpoints
-- `GET /api/products` — Query params: `search`, `lowStock=true`.
-- `POST /api/products` — Roles: `ADMIN`, `WAREHOUSE`. Create product master record.
-- `PUT /api/products/:id` — Roles: `ADMIN`, `WAREHOUSE`. Update product master record.
-- `GET /api/inventory` — Stock levels across warehouses.
-- `POST /api/inventory/adjust` — Roles: `ADMIN`, `WAREHOUSE`. Body: `productId`, `warehouseId`, `quantity`, `movementType` (`IN`/`OUT`), `reason`.
-
-### 4. Sales Challans Endpoints
-- `GET /api/challans` — Query params: `page`, `limit`, `search`, `status`.
-- `POST /api/challans` — Create Sales Challan with multiple items and snapshot payload.
-- `GET /api/challans/:id` — View detailed challan & printable invoice layout.
-- `PATCH /api/challans/:id/status` — Body: `{ "status": "CONFIRMED" }` or `{ "status": "CANCELLED" }`. (Deducts or restores stock atomically).
-
-### 5. Audit & Dashboard Endpoints
-- `GET /api/audit-logs` — Roles: `ADMIN`, `ACCOUNTS`.
-- `GET /api/dashboard/summary` — Executive overview metrics & chart data.
-
----
-
-## ⚡ Quick Start (Running Locally)
-
-### Prerequisites
-- Node.js (v18+)
-- npm (v9+)
-
-### 1. Backend Setup & Database Seeding
+### 1. Start the Backend API
 
 ```bash
 cd backend
@@ -200,125 +34,153 @@ npm run prisma:db:push
 npm run prisma:seed
 npm run dev
 ```
-- Backend API will start at: `http://localhost:5000/api`
-- Swagger Documentation available at: `http://localhost:5000/api-docs`
 
-### 2. Frontend Setup
+The API will run at `http://localhost:5000/api`.  
+You can also view interactive Swagger API docs at `http://localhost:5000/api-docs`.
 
-In a new terminal window:
+### 2. Start the Frontend App
+
+In a separate terminal window:
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-- Frontend App will open at: `http://localhost:5173`
+
+Open `http://localhost:5173` in your browser.
 
 ---
 
-## 🐳 Docker Setup
+## 🐳 Run with Docker
 
-Run the entire full-stack application (Frontend + Backend + PostgreSQL Database) with a single command:
+To run the whole project (Database + Backend + Frontend) in one command:
 
 ```bash
 docker-compose up -d --build
 ```
 
-- **Frontend Portal**: `http://localhost`
+- **Frontend App**: `http://localhost`
 - **Backend API**: `http://localhost:5000/api`
 - **Swagger Docs**: `http://localhost:5000/api-docs`
 
 ---
 
-## 🧪 Automated Testing & QA Verification Checklist
+## 🛠️ Tech Stack
 
-### Running Integration Tests
+### Backend
+- **Node.js** & **TypeScript**
+- **Express.js** (structured with Controllers, Services, and Middlewares)
+- **Prisma ORM** (PostgreSQL for production, SQLite for local dev)
+- **JWT & bcryptjs** (Authentication with access & refresh tokens)
+- **Zod** (Input validation)
+- **Winston & Morgan** (Logging)
+
+### Frontend
+- **React 18** & **TypeScript**
+- **Vite** (Fast build tool)
+- **TanStack Query** (React Query v5 for server state & caching)
+- **Tailwind CSS** (Styling)
+- **Recharts** (Dashboard analytics charts)
+- **Lucide Icons** (UI icons)
+
+---
+
+## 📐 Project Structure
+
+```
+.
+├── backend/
+│   ├── prisma/                  # Database schemas (SQLite & PostgreSQL) & seed data
+│   ├── src/
+│   │   ├── controllers/         # Handles HTTP requests & responses
+│   │   ├── services/            # Core business logic (stock calculations, sales rules)
+│   │   ├── middlewares/         # JWT auth, role checks, error handling
+│   │   ├── validations/         # Zod schemas for incoming requests
+│   │   ├── routes/              # Express API route endpoints
+│   │   └── index.ts             # Server entry point
+│   ├── tests/                   # Jest API integration tests
+│   └── swagger.json             # Swagger API documentation definition
+├── frontend/
+│   ├── src/
+│   │   ├── components/          # Reusable UI parts (Layout, Navbar, Sidebar, Modals)
+│   │   ├── context/             # Auth context (token & login state management)
+│   │   ├── pages/               # Dashboard, Customers, Products, Inventory, Challans
+│   │   └── lib/                 # Axios instance with auto-refresh token handling
+├── render.yaml                  # 1-Click Render deployment configuration
+└── docker-compose.yml           # Docker setup for full local stack
+```
+
+---
+
+## 🔄 Core Business Workflows
+
+1. **Customer Management**:
+   - Create and edit customer profiles (Wholesale / Retail).
+   - Built-in duplicate check for GST and Email.
+   - Track follow-up notes with scheduled follow-up dates.
+
+2. **Inventory Adjustments**:
+   - Adjust product stock manually (`IN` for stock received, `OUT` for stock issued).
+   - System flags items that drop below minimum stock threshold.
+
+3. **Sales Challans & Automatic Stock Deduction**:
+   - **Draft State**: Prepare challans without changing stock.
+   - **Confirmation**: Stock is automatically checked and deducted from warehouse inventory. If stock is insufficient, the system blocks the order with a clear error.
+   - **Invoice Generation**: Clean, printable sales challan / invoice layout.
+   - **Cancellation**: Cancelling a confirmed challan restores the items back to warehouse stock.
+
+---
+
+## 🔌 API Overview
+
+| Method | Endpoint | Description | Allowed Roles |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/login` | Login and receive tokens | Public |
+| `POST` | `/api/auth/refresh` | Get a new access token | Public |
+| `GET` | `/api/customers` | Search & list customers | All Roles |
+| `POST` | `/api/customers` | Create new customer | Admin, Sales |
+| `POST` | `/api/customers/:id/followups` | Log a CRM follow-up note | Admin, Sales |
+| `GET` | `/api/products` | View product catalog & stock | All Roles |
+| `POST` | `/api/inventory/adjust` | Record manual stock `IN` / `OUT` | Admin, Warehouse |
+| `GET` | `/api/challans` | List sales challans | All Roles |
+| `POST` | `/api/challans` | Create draft sales challan | Admin, Sales |
+| `PATCH` | `/api/challans/:id/status` | Confirm or cancel challan | Admin, Sales, Warehouse |
+| `GET` | `/api/audit-logs` | View audit trail | Admin, Accounts |
+
+---
+
+## ☁️ Deployment on Render
+
+This project includes a pre-configured `render.yaml` for 1-click cloud deployment.
+
+### 1-Click Render Blueprint
+1. Push this project to your GitHub account.
+2. Open [Render Dashboard](https://dashboard.render.com/) and click **New +** ➔ **Blueprint**.
+3. Select your repository.
+4. Render will automatically set up:
+   - **PostgreSQL Database** (`minierp-postgres`)
+   - **Backend Web Service** (`minierp-backend`)
+   - **Frontend Static Site** (`minierp-frontend`)
+5. Click **Apply** to deploy.
+
+See [docs/DEPLOYMENT.md](file:///home/mohit/Pictures/Company%20Assignment/docs/DEPLOYMENT.md) for full step-by-step instructions.
+
+---
+
+## 🧪 Testing
+
+To run the automated integration test suite:
+
 ```bash
 cd backend
 npm test
 ```
 
-### Manual QA Verification Matrix
-
-#### 1. Authentication & Role Authorization
-- [x] **Admin Login**: Test `admin@minierp.com` / `Admin123!`. Access full system.
-- [x] **Sales Login**: Test `sales@minierp.com` / `Sales123!`. Access CRM & Challans.
-- [x] **Warehouse Lead**: Test `warehouse@minierp.com` / `Warehouse123!`. Access Stock Adjustments.
-- [x] **Accounts Manager**: Test `accounts@minierp.com` / `Accounts123!`. Access Audit Logs & Financials.
-- [x] **Unauthenticated Access**: Direct route navigation to `/dashboard` redirects to `/login`.
-- [x] **Token Refresh**: Automatic seamless token refresh when access token expires.
-
-#### 2. Customer CRM Module
-- [x] **Customer Creation**: Fill form with duplicate GST/Email; verify validation prevents duplicates.
-- [x] **Search & Filter**: Search by business name, filter by Wholesale / Retail.
-- [x] **CRM Follow-up**: Add follow-up note and verify scheduled date updates on timeline.
-- [x] **Soft Delete**: Deleting a customer marks record as `isDeleted = true`.
-
-#### 3. Product & Inventory Module
-- [x] **Low Stock Indicator**: Products with stock <= minStock highlight with warning badge.
-- [x] **Stock Adjustment (IN)**: Add stock quantity; verify stock movement log records `IN`.
-- [x] **Stock Adjustment (OUT)**: Deduct stock; verify system blocks deduction if stock < requested.
-
-#### 4. Sales Challan Workflow
-- [x] **Create Draft Challan**: Create Challan with multiple items; verify stock is NOT deducted in DRAFT status.
-- [x] **Confirm Challan**: Click Confirm; verify stock is deducted and OUT movement is logged.
-- [x] **Negative Stock Block**: Attempting to confirm a challan exceeding available stock throws clear error.
-- [x] **Printable Invoice**: Click Print/Export PDF; verify printable document formats properly.
-
----
-
-## ☁️ Production Cloud Deployment Guide
-
-### 1. Render Deployment (Recommended - Managed PostgreSQL + Express API)
-
-#### Option A: 1-Click Render Blueprint
-1. Connect your GitHub repository to [Render](https://dashboard.render.com/).
-2. Select **New** ➔ **Blueprint**.
-3. Render automatically detects `render.yaml` and provisions:
-   - **Render PostgreSQL Managed Database** (`minierp-postgres`)
-   - **Render Web Service** (`minierp-backend`)
-   - **Render Static Site** (`minierp-frontend`)
-4. Click **Apply** to deploy!
-
-#### Option B: Manual Render Setup
-1. **Create PostgreSQL Database**:
-   - Go to Render ➔ **New +** ➔ **PostgreSQL**.
-   - Set Name: `minierp-postgres`, Database Name: `minierp`.
-   - Copy the generated **Internal Database URL**.
-2. **Deploy Backend Web Service**:
-   - Go to Render ➔ **New +** ➔ **Web Service**.
-   - Root Directory: `backend`
-   - Build Command: `npm install && npm run render:build`
-   - Start Command: `npm run render:start`
-   - Set Environment Variables:
-     - `NODE_ENV`: `production`
-     - `PORT`: `10000`
-     - `DATABASE_URL`: `<Render PostgreSQL Internal Database URL>`
-     - `JWT_ACCESS_SECRET`: `super_secret_jwt_access_key_2026`
-     - `JWT_REFRESH_SECRET`: `super_secret_jwt_refresh_key_2026`
-     - `CORS_ORIGIN`: `*` (or frontend application domain)
-
-### 2. Frontend Deployment (Render / Vercel / Netlify)
-1. Import repository and set Root Directory to `frontend`.
-2. **Build Command**: `npm run build`
-3. **Output Directory**: `dist`
-4. Environment Variable:
-   - `VITE_API_BASE_URL`: `https://minierp-backend.onrender.com/api` (or your Render service domain)
-
-### 3. Self-Hosted Docker Deployment
-- **Docker Compose**: Run `docker-compose up -d --build` for full self-hosted local or VPS stack.
-
-
-
----
-
-## 📝 Assumptions & Known Design Decisions
-
-1. **Snapshot Financial Isolation**: Historical sales challan items preserve product price & customer snapshot data at time of creation, preventing retro-active reporting changes if product prices change later.
-2. **Multi-Role Flexibility**: Preset 1-click login buttons are provided on the login page to allow evaluators to switch seamlessly between Admin, Sales, Warehouse, and Accounts roles.
-3. **Storage**: Image URLs accept standard HTTPS hosted image links. AWS S3 storage configuration can be enabled by specifying S3 bucket credentials in environment variables.
+A manual QA testing checklist is also available in [docs/MANUAL_TESTING_CHECKLIST.md](file:///home/mohit/Pictures/Company%20Assignment/docs/MANUAL_TESTING_CHECKLIST.md).
 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License.
+
+This project is open-source under the MIT License.
