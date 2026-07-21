@@ -6,10 +6,14 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate && tsc",
+    "render:build": "prisma generate --schema=prisma/schema.postgres.prisma && tsc",
+    "render:start": "prisma db push --schema=prisma/schema.postgres.prisma && tsx prisma/seed.ts && node dist/index.js",
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
+    "prisma:generate:postgres": "prisma generate --schema=prisma/schema.postgres.prisma",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:db:push": "prisma db push",
+    "prisma:db:push:postgres": "prisma db push --schema=prisma/schema.postgres.prisma",
     "prisma:seed": "tsx prisma/seed.ts",
     "test": "jest --runInBand",
     "lint": "tsc --noEmit"

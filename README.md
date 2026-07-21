@@ -269,45 +269,46 @@ npm test
 
 ## ☁️ Production Cloud Deployment Guide
 
-### 1. Database Setup (Railway PostgreSQL)
-1. Log in to [Railway.app](https://railway.app) and create a **New Project**.
-2. Click **+ New** ➔ **Database** ➔ **Add PostgreSQL**.
-3. Railway will provision a managed PostgreSQL database and automatically expose the `${{Postgres.DATABASE_URL}}` variable.
+### 1. Render Deployment (Recommended - Managed PostgreSQL + Express API)
 
-### 2. Backend Deployment on Railway (Recommended)
+#### Option A: 1-Click Render Blueprint
+1. Connect your GitHub repository to [Render](https://dashboard.render.com/).
+2. Select **New** ➔ **Blueprint**.
+3. Render automatically detects `render.yaml` and provisions:
+   - **Render PostgreSQL Managed Database** (`minierp-postgres`)
+   - **Render Web Service** (`minierp-backend`)
+   - **Render Static Site** (`minierp-frontend`)
+4. Click **Apply** to deploy!
 
-1. Log in to [Railway.app](https://railway.app) and create a **New Project**.
-2. **Add PostgreSQL Database**:
-   - Click **+ New** ➔ **Database** ➔ **Add PostgreSQL**.
-   - Railway will provision a managed PostgreSQL database and automatically export `DATABASE_URL`.
-3. **Deploy Backend Service**:
-   - Click **+ New** ➔ **GitHub Repo** ➔ Select your repository.
-   - Set **Root Directory** to `backend`.
-   - Railway will auto-detect `backend/railway.json` and Nixpacks setup.
-4. **Set Environment Variables in Railway**:
-   - `NODE_ENV`: `production`
-   - `DATABASE_URL`: `${{Postgres.DATABASE_URL}}` (Reference Railway Postgres service)
-   - `JWT_ACCESS_SECRET`: `super_secret_jwt_access_key_2026`
-   - `JWT_REFRESH_SECRET`: `super_secret_jwt_refresh_key_2026`
-   - `CORS_ORIGIN`: `*` (or your Vercel frontend URL)
-5. **Database Push & Seed**:
-   - The pre-configured `railway.json` automatically runs `npx prisma db push --schema=prisma/schema.postgres.prisma` and seeds initial accounts on first startup.
-6. **Generate Public Domain**:
-   - In your Backend Service Settings, click **Generate Domain** (e.g. `https://minierp-backend-production.up.railway.app`).
-   - Test health check endpoint: `https://minierp-backend-production.up.railway.app/health`.
+#### Option B: Manual Render Setup
+1. **Create PostgreSQL Database**:
+   - Go to Render ➔ **New +** ➔ **PostgreSQL**.
+   - Set Name: `minierp-postgres`, Database Name: `minierp`.
+   - Copy the generated **Internal Database URL**.
+2. **Deploy Backend Web Service**:
+   - Go to Render ➔ **New +** ➔ **Web Service**.
+   - Root Directory: `backend`
+   - Build Command: `npm install && npm run render:build`
+   - Start Command: `npm run render:start`
+   - Set Environment Variables:
+     - `NODE_ENV`: `production`
+     - `PORT`: `10000`
+     - `DATABASE_URL`: `<Render PostgreSQL Internal Database URL>`
+     - `JWT_ACCESS_SECRET`: `super_secret_jwt_access_key_2026`
+     - `JWT_REFRESH_SECRET`: `super_secret_jwt_refresh_key_2026`
+     - `CORS_ORIGIN`: `*` (or frontend application domain)
 
-### 3. Alternative Backend Deployment (Fly.io / VPS)
-1. Create a new service pointing to your repository `backend` directory.
-2. **Build Command**: `npm install && npx prisma generate && npx prisma db push --schema=prisma/schema.postgres.prisma && npm run build`
-3. **Start Command**: `npm run start`
-4. Set Environment Variables (`NODE_ENV`, `PORT`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGIN`).
-
-### 4. Frontend Deployment (Vercel / Netlify)
+### 2. Frontend Deployment (Render / Vercel / Netlify)
 1. Import repository and set Root Directory to `frontend`.
 2. **Build Command**: `npm run build`
 3. **Output Directory**: `dist`
 4. Environment Variable:
-   - `VITE_API_BASE_URL`: `https://<your-railway-app>.up.railway.app/api`
+   - `VITE_API_BASE_URL`: `https://minierp-backend.onrender.com/api` (or your Render service domain)
+
+### 3. Alternative Deployments (Railway / Docker / VPS)
+- **Railway**: Connect repo with Root Directory `backend`. Railway auto-detects `backend/railway.json`.
+- **Docker**: Run `docker-compose up -d --build` for full self-hosted local/VPS stack.
+
 
 
 ---
