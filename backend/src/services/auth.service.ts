@@ -89,7 +89,7 @@ export class AuthService {
         email: data.email,
         passwordHash,
         fullName: data.fullName,
-        role: data.role,
+        role: data.role as any,
       },
     });
 
