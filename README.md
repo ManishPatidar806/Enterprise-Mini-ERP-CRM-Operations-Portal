@@ -7,6 +7,10 @@ A production-grade web application built for wholesale and distribution business
 
 ---
 
+Demo:- https://enterprise-mini-erp-crm.vercel.app/
+
+---
+
 ## 🔑 User Authentication & Registration
 
 The application supports both **self-service user registration** with role assignment and **pre-configured demo user accounts**:
