@@ -1,4 +1,6 @@
-# Production Dockerfile for Backend
+# =========================
+# Builder Stage
+# =========================
 FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
@@ -12,8 +14,12 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run render:start
+# Generate Prisma Client and compile TypeScript
+RUN npm run render:build
 
+# =========================
+# Runner Stage
+# =========================
 FROM node:20-bookworm-slim AS runner
 
 WORKDIR /app
@@ -25,12 +31,10 @@ COPY prisma ./prisma/
 
 RUN npm ci --omit=dev
 
-RUN npx prisma generate --schema=prisma/schema.postgres.prisma
-
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 5000
 
-
 CMD ["npm", "run", "render:start"]
-
