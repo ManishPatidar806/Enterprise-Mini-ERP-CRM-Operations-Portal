@@ -6,6 +6,7 @@ import { authorizeRoles } from '../middlewares/role.middleware';
 const router = Router();
 
 router.post('/login', AuthController.login);
+router.post('/register', AuthController.registerUser);
 router.post('/refresh', AuthController.refreshToken);
 router.post('/logout', AuthController.logout);
 router.get('/me', authenticateJWT, AuthController.getProfile);

@@ -59,6 +59,7 @@ export const App: React.FC = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Login initialRegister={true} />} />
 
             <Route
               path="/"

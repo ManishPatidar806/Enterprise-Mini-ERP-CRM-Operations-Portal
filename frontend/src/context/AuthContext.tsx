@@ -7,6 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (data: { fullName: string; email: string; password: string; role: string }) => Promise<void>;
   logout: () => Promise<void>;
   isAdmin: boolean;
   isSales: boolean;
@@ -58,6 +59,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const register = async (data: { fullName: string; email: string; password: string; role: string }) => {
+    const res = await api.post('/auth/register', data);
+    if (res.data?.success) {
+      // Auto login after successful registration
+      await login(data.email, data.password);
+    } else {
+      throw new Error(res.data?.message || 'Registration failed');
+    }
+  };
+
   const logout = async () => {
     const refreshToken = localStorage.getItem('refresh_token');
     try {
@@ -86,6 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         isLoading,
         login,
+        register,
         logout,
         isAdmin,
         isSales,
