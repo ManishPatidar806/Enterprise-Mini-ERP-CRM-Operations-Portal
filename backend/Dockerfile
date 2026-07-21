@@ -31,8 +31,6 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 5000
 
-<<<<<<< HEAD
+
 CMD ["npm", "run", "render:start"]
-=======
-CMD ["node", "dist/index.js"]
->>>>>>> b48c414cafb134b45e2c50cb9c7642fb784d579a
+
